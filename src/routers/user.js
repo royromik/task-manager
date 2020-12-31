@@ -24,7 +24,7 @@ router.post("/users/login", async (req, res) => {
     const token = await user.getAuthToken();
     res.send({ user, token });
   } catch (e) {
-    res.status(400).send();
+    res.status(400).send('Authentication failed');
   }
 });
 
@@ -54,21 +54,8 @@ router.get("/users/me", auth, async (req, res) => {
   res.send(req.user);
 });
 
-router.get("/user/:id", async (req, res) => {
-  const _id = req.params.id;
 
-  try {
-    const user = await Users.findById(_id);
-    if (!user) {
-      return res.status("404").send();
-    }
-    res.send(user);
-  } catch (e) {
-    res.status("500").send();
-  }
-});
-
-router.patch("/user/:id", async (req, res) => {
+router.patch("/users/me", auth,  async (req, res) => {
   const updates = Object.keys(req.body);
   const allowedupdates = ["name", "age", "password", "email"];
   const isUpdatesvalid = updates.every((update) =>
@@ -80,14 +67,11 @@ router.patch("/user/:id", async (req, res) => {
   }
 
   try {
-    const user = await Users.findById(req.params.id);
-    updates.forEach((update) => (user[update] = req.body[update]));
-    await user.save();
+    // const user = await Users.findById(req.params.id);
+    updates.forEach((update) => (req.user[update] = req.body[update]));
+    await req.user.save();
 
-    if (!user) {
-      return res.status("404").send();
-    }
-    res.status("202").send(user);
+    res.status("202").send(req.user);
   } catch (e) {
     if (e.reason) {
       return res.status("404").send();
@@ -96,14 +80,10 @@ router.patch("/user/:id", async (req, res) => {
   }
 });
 
-router.delete("/user/:id", async (req, res) => {
+router.delete("/users/me", auth, async (req, res) => {
   try {
-    const user = await Users.findByIdAndDelete(req.params.id);
-
-    if (!user) {
-      return res.status("404").send();
-    }
-    res.send(user);
+    await req.user.remove()
+    res.send(req.user);
   } catch (e) {
     if (e.reason) {
       return res.status("404").send();
