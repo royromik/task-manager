@@ -49,6 +49,11 @@ const userSchemas = new mongoose.Schema({
       },
     },
   ],
+  avatar:{
+    type: Buffer
+  }
+},{
+  timestamps: true
 });
 
 userSchemas.virtual('tasks',{
@@ -67,10 +72,11 @@ userSchemas.methods.toJSON = function(){
   return userObject;
 }
 
+// add a entry to user with the auth token provided by jwt
 userSchemas.methods.getAuthToken = async function () {
   const user = this;
 
-  const token = jwt.sign({ _id: user._id.toString() }, "thisismynodecourse");
+  const token = jwt.sign({ _id: user._id.toString() }, process.env.JWT_SECRET);
 
   user.tokens.push({token})
 
@@ -79,6 +85,7 @@ userSchemas.methods.getAuthToken = async function () {
   return token;
 };
 
+// match the credentials with db
 userSchemas.statics.findByCredentials = async (email, password) => {
   const user = await Users.findOne({ email });
   if (!user) {
